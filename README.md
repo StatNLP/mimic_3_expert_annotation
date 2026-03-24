@@ -100,7 +100,7 @@ After a moment, you'll see a message in the terminal containing a link that look
 Running on http://127.0.0.1:5000
 ```
 
-**Copy that link and paste it into any web browser** (Chrome, Firefox, Safari, Edge — any of them work). The application will open right in your browser. Enter your first and last name in the appropriate field (not capitalized).
+**Copy that link and paste it into any web browser** (Chrome, Firefox, Safari, Edge — any of them work). The application will open right in your browser. Enter your first name in the appropriate field (not capitalized). For example, the password for Max Musterman would be "max"
 
 Happy annotating! 🎉
 
