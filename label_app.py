@@ -237,21 +237,17 @@ def plot_patient_data(n_clicks, name, annotation_data, todo, assignement, annoat
     labels =  annoation_df["doc_an"].tolist()
     onset_times = [(t, l) for t, l in zip(hours, labels) if l == "onset"]
     diag_times = [(t, l) for t, l in zip(hours, labels) if l == "diagnosis"]
-    one_diag = len(diag_times) == 1
-    if not(one_diag):
+    if (len(diag_times) == 0 and len(onset_times) == 0) or (len(diag_times) == 1 and len(onset_times) == 0) or (len(diag_times) == 1 and len(onset_times) == 1 and diag_times[0][0]-48 <= onset_times[0][0] <= diag_times[0][0]):
+        max_patient = len(assignement[name])
+        done = max_patient - len(todo) 
+        first_key = todo.pop()
+        df = pd.DataFrame(annotation_data)
+        df_out = df[df["ts_id"] == first_key].sort_values(by=["hour"])
+        df_out = compute_diag_and_onset(df_out)
+        text = f"Patient {done}/{max_patient}"
+        return df_out.to_dict('records'), todo, text, df_out.to_dict('records')
+    else:
         raise PreventUpdate
-    no_onset = len(onset_times) == 0
-    onset_in_window = len(onset_times) == 1 and diag_times[0][0]-48 <= onset_times[0][0] <= diag_times[0][0]
-    if not(one_diag and (no_onset or onset_in_window)):
-        raise PreventUpdate
-    max_patient = len(assignement[name])
-    done = max_patient - len(todo) 
-    first_key = todo.pop()
-    df = pd.DataFrame(annotation_data)
-    df_out = df[df["ts_id"] == first_key].sort_values(by=["hour"])
-    df_out = compute_diag_and_onset(df_out)
-    text = f"Patient {done}/{max_patient}"
-    return df_out.to_dict('records'), todo, text, df_out.to_dict('records')
 
 @callback(
     Output("label_results", "data", allow_duplicate=True),
@@ -269,12 +265,17 @@ def save_annoation(n_clicks, user_name, annoation, all_annoations):
     labels =  annoation_df["doc_an"].tolist()
     onset_times = [(t, l) for t, l in zip(hours, labels) if l == "onset"]
     diag_times = [(t, l) for t, l in zip(hours, labels) if l == "diagnosis"]
-    one_diag = len(diag_times) == 1
-    no_onset = len(onset_times) == 0
-    if not(one_diag):
-        raise PreventUpdate
-    onset_in_window = len(onset_times) == 1 and diag_times[0][0]-48 <= onset_times[0][0] <= diag_times[0][0]
-    if one_diag and (no_onset or onset_in_window):
+    if len(diag_times) == 0 and len(onset_times) == 0:
+        new_data = {"ts_id":annoation_df["ts_id"].tolist()[0], "onset":"no_sepsis", "diagnosis":"no_sepsis"}
+        all_annoations.append(new_data)
+        pd.DataFrame(all_annoations).to_csv(f"results/{user_name}.csv")
+        return all_annoations
+    elif len(diag_times) == 1 and len(onset_times) == 0:
+        new_data = {"ts_id":annoation_df["ts_id"].tolist()[0], "onset":diag_times[0][0], "diagnosis":diag_times[0][0]}
+        all_annoations.append(new_data)
+        pd.DataFrame(all_annoations).to_csv(f"results/{user_name}.csv")
+        return all_annoations
+    elif len(diag_times) == 1 and len(onset_times) == 1 and diag_times[0][0]-48 <= onset_times[0][0] <= diag_times[0][0]:
         onset = onset_times[0][0] if onset_times else diag_times[0][0]
         new_data = {"ts_id":annoation_df["ts_id"].tolist()[0], "onset":onset, "diagnosis":diag_times[0][0]}
         all_annoations.append(new_data)
