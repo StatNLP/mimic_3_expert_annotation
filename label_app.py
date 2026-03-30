@@ -78,8 +78,8 @@ app.layout = html.Div([
                     "field": "sent",
                     "headerName": "Text",
                     "editable": False,
-                    "flex": 4,
-                    "minWidth": 1000,
+                    "flex": 1,
+                    "minWidth": 600,
                     "wrapText": True,
                     "autoHeight": True,
                     "cellStyle": {
@@ -88,20 +88,20 @@ app.layout = html.Div([
                         "padding": "8px",
                     },
                 },
-                {"field": "hour",    "headerName": "Hour",      "editable": False, "minWidth": 80},
-                {"field": "human_1", "headerName": "Human 1", "editable": False, "minWidth": 80,
+                {"field": "hour",    "headerName": "Hour",      "editable": False, "minWidth": 60},
+                {"field": "human_1", "headerName": "Human 1", "editable": False, "minWidth": 60,
                     "cellStyle": {"styleConditions": [
                         {"condition": "params.data.c_h1 === 'yellow'", "style": {"backgroundColor": "#FFF3CD"}},
                         {"condition": "params.data.c_h1 === 'red' && params.data.human_1 === 'diagnosis'",    "style": {"backgroundColor": "#FFCCCC"}}
                     ]}
                 },
-                {"field": "human_2", "headerName": "Human 2", "editable": False, "minWidth": 80,
+                {"field": "human_2", "headerName": "Human 2", "editable": False, "minWidth": 60,
                     "cellStyle": {"styleConditions": [
                         {"condition": "params.data.c_h2 === 'yellow'", "style": {"backgroundColor": "#FFF3CD"}},
                         {"condition": "params.data.c_h2 === 'red' && params.data.human_2 === 'diagnosis'",    "style": {"backgroundColor": "#FFCCCC"}}
                     ]}
                 },
-                {"field": "ai", "headerName": "Ai", "editable": False, "minWidth": 80,
+                {"field": "ai", "headerName": "Ai", "editable": False, "minWidth": 60,
                     "cellStyle": {"styleConditions": [
                         {"condition": "params.data.c_ai === 'yellow'", "style": {"backgroundColor": "#FFF3CD"}},
                         {"condition": "params.data.c_ai === 'red' && params.data.ai === 'diagnosis'",    "style": {"backgroundColor": "#FFCCCC"}}
@@ -125,7 +125,7 @@ app.layout = html.Div([
                 "autoHeight": True,
             },
             columnSize="responsiveSizeToFit", 
-            style={"height": "800px", "width": "100%"},
+            style={"height": "800px", "width": "80%"},
             className="ag-theme-alpine",
             dashGridOptions={
                 "singleClickEdit": True,
@@ -136,7 +136,7 @@ app.layout = html.Div([
             },
         ),
         dcc.Button('Submit', id='submit', n_clicks=0)
-    ], id="label_part", hidden=True),
+    ], id="label_part", hidden=True, style={"display": "none", "flexDirection": "column", "alignItems": "center", "width": "100%",}),
     dcc.Store("annoation_data", data=prepare_data("reannotation_r2.csv")),
     dcc.Store("patients_todo"),
     dcc.Store("patient_assigment", data=prepare_patient("assigenment_r2_r.pkl")),
@@ -183,10 +183,26 @@ def specific_table_updates(change, annoation, table_save):
 
 
 @callback(
+    Output("label_part", "style"),
+    Output("login_part", "hidden"),
+    Input('submit_name', "n_clicks"),
+    State("user_name", "value"),
+    State("patient_assigment", "data"),
+)
+def change_view(n_clicks, name, assignement):
+    base_style = {
+        "flexDirection": "column",
+        "alignItems": "center",
+        "width": "100%",
+    }
+    if not(name in assignement.keys()):
+        raise PreventUpdate
+    return {**base_style, "display": "flex"}, True
+
+
+@callback(
     Output('table-dropdown', 'rowData', allow_duplicate=True),
     Output("patients_todo", "data", allow_duplicate=True),
-    Output("label_part", "hidden"),
-    Output("login_part", "hidden"),
     Output("annoation_counter", "children", allow_duplicate=True),
     Output("label_results", "data", allow_duplicate=True),
     Output("table_mem", "data", allow_duplicate=True),
@@ -214,7 +230,7 @@ def init_annoation_data(n_clicks, name, annotation_data, assignement):
     df_out = df[df["ts_id"] == first_key].sort_values(by=["hour"])
     df_out = compute_diag_and_onset(df_out)
     text = f"Patient {done}/{max_patient}"
-    return df_out.to_dict('records'), assignement, False, True, text, annoation_results, df_out.to_dict('records')
+    return df_out.to_dict('records'), assignement, text, annoation_results, df_out.to_dict('records')
 
 @callback(
     Output('table-dropdown', 'rowData', allow_duplicate=True),
